@@ -47,6 +47,11 @@ import com.example.designyourt_shirt.uiScreen.CartPage.CartViewModel
 import com.example.designyourt_shirt.uiScreen.HomeScreen.ProductViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.app.Activity
+import android.util.Log
+import com.razorpay.Checkout
+import com.razorpay.PaymentResultListener
+import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +65,8 @@ fun CheckoutScreen(
 
     var showOrderConfirmation by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var paymentErrorMessage by remember { mutableStateOf<String?>(null) }
 
     // Form state
     var fullName by remember { mutableStateOf("") }
@@ -556,6 +563,16 @@ fun CheckoutScreen(
                             onClick = { selectedPaymentMethod = "Cash on Delivery" }
                         )
 
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Pay with Card (Razorpay)
+                        PaymentMethodItem(
+                            title = "Pay with Card",
+                            subtitle = "Secure online payment",
+                            isSelected = selectedPaymentMethod == "Pay with Card",
+                            onClick = { selectedPaymentMethod = "Pay with Card" }
+                        )
+
                     }
                 }
 
@@ -668,10 +685,39 @@ fun CheckoutScreen(
                 Button(
                     onClick = {
                         scope.launch {
-                            // Show order confirmation
-                            showOrderConfirmation = true
-                            // Clear cart in the background
-                            cartViewModel.clearCart()
+                            if (selectedPaymentMethod == "Pay with Card") {
+                                // Start Razorpay Checkout
+                                try {
+                                    val activity = (LocalContext.current as? Activity)
+                                    val checkout = Checkout()
+                                    // TODO: Replace with your Razorpay API Key in strings.xml
+                                    checkout.setKeyID(activity?.getString(com.example.designyourt_shirt.R.string.razorpay_key) ?: "rzp_test_placeholder")
+
+                                    val options = JSONObject()
+                                    options.put("name", "Design Your T-Shirt")
+                                    options.put("description", "Order Payment")
+                                    // Razorpay expects amount in paise (INR) or smallest currency unit
+                                    options.put("amount", ((totalPrice + 5.00) * 100).toInt())
+                                    options.put("currency", "INR")
+
+                                    // Prefill (optional)
+                                    val prefill = JSONObject()
+                                    prefill.put("contact", "")
+                                    prefill.put("email", "")
+                                    options.put("prefill", prefill)
+
+                                    // Open Razorpay Checkout
+                                    activity?.let {
+                                        checkout.open(it, options)
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("Checkout", "Error starting Razorpay Checkout: ${e.message}")
+                                }
+                            } else {
+                                // Cash on Delivery flow: Confirm and clear cart
+                                showOrderConfirmation = true
+                                cartViewModel.clearCart()
+                            }
                         }
                     },
                     modifier = Modifier
@@ -695,6 +741,35 @@ fun CheckoutScreen(
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
+                }
+
+                // Listen for payment broadcasts
+                DisposableEffect(Unit) {
+                    val successFilter = android.content.IntentFilter("com.example.designyourt_shirt.PAYMENT_SUCCESS")
+                    val failureFilter = android.content.IntentFilter("com.example.designyourt_shirt.PAYMENT_FAILED")
+
+                    val receiver = object : android.content.BroadcastReceiver() {
+                        override fun onReceive(ctx: android.content.Context?, intent: android.content.Intent?) {
+                            when (intent?.action) {
+                                "com.example.designyourt_shirt.PAYMENT_SUCCESS" -> {
+                                    // Show confirmation and clear cart already handled in MainActivity
+                                    showOrderConfirmation = true
+                                }
+                                "com.example.designyourt_shirt.PAYMENT_FAILED" -> {
+                                    val code = intent.getIntExtra("code", -1)
+                                    val response = intent.getStringExtra("response")
+                                    paymentErrorMessage = "Payment failed: $code ${response ?: ""}"
+                                }
+                            }
+                        }
+                    }
+
+                    context.registerReceiver(receiver, successFilter)
+                    context.registerReceiver(receiver, failureFilter)
+
+                    onDispose {
+                        try { context.unregisterReceiver(receiver) } catch (_: Exception) {}
+                    }
                 }
 
                 // Bottom spacing for scrollable content

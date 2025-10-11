@@ -71,7 +71,7 @@ fun HomeScreen(
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("All") }
-    val categories = listOf("All", "Casual", "Formal", "Graphic", "Sporty")
+    val categories = listOf("All", "Casual", "Formal", "Graphic", "Sporty", "Festival Season")
 
     val filteredProducts = remember(searchQuery, selectedCategory, products) {
         products.filter { product ->

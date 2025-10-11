@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Design Your T-Shirt</string>
+    <!-- TODO: Replace with your Razorpay Key (test or live) -->
+    <string name="razorpay_key">rzp_test_placeholder</string>
 </resources>

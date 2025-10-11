@@ -370,3 +370,21 @@ If you encounter any issues:
 **Made with ❤️ by [Shivam Tawar](https://github.com/Shivamtawar)**
 
 *Design Your Style, Wear Your Creativity! 🎨*
+
+## 💳 Payment Integration (Razorpay)
+
+This project includes a basic integration with Razorpay Android SDK for handling in-app payments.
+
+Setup:
+- Add your Razorpay API key to `app/src/main/res/values/strings.xml` replacing `razorpay_key`.
+- The app uses `MainActivity` to receive Razorpay callbacks and logs transactions to Firebase Realtime Database under `transactions/{userId}`.
+
+Notes:
+- Replace `rzp_test_placeholder` with your test/live key before releasing.
+- For production use, generate and verify payment signatures on a secure server. This project uses a client-only flow suitable for testing.
+
+Testing payment flows:
+1. Add items to cart and navigate to Checkout.
+2. Select "Pay with Card" and press Place Order.
+3. Complete payment in the Razorpay checkout UI. On success, the app records a transaction and shows the order confirmation screen. On failure, an error message is displayed.
+

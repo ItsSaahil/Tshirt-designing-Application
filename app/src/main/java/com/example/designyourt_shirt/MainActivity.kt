@@ -2,6 +2,11 @@ package com.example.designyourt_shirt
 
 
 import android.os.Bundle
+import android.content.Intent
+import android.util.Log
+import com.razorpay.PaymentResultListener
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.auth.FirebaseAuth
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,11 +37,10 @@ import com.example.designyourt_shirt.uiScreen.Profile.ProductUploadScreen
 import com.example.designyourt_shirt.uiScreen.Tshirt_Design.TShirtDesigner
 import com.example.designyourt_shirt.uiScreen.Tshirt_Design.TShirtViewModel
 import com.example.designyourt_shirt.uiscreens.StartPage.GetStarted
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), PaymentResultListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -125,5 +129,52 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onPaymentSuccess(razorpayPaymentID: String?) {
+        try {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous"
+            val database = FirebaseDatabase.getInstance()
+            val txnRef = database.getReference("transactions").child(userId).child(razorpayPaymentID ?: "unknown")
+            val payload = mapOf(
+                "transactionId" to (razorpayPaymentID ?: "unknown"),
+                "status" to "SUCCESS",
+                "timestamp" to System.currentTimeMillis()
+            )
+            txnRef.setValue(payload)
+
+            // Clear the user's cart
+            database.getReference("user_carts").child(userId).child("items").removeValue()
+
+            // Broadcast success so UI can react
+            val intent = Intent("com.example.designyourt_shirt.PAYMENT_SUCCESS")
+            intent.putExtra("transactionId", razorpayPaymentID)
+            sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.e("Payment", "onPaymentSuccess error: ${e.message}")
+        }
+    }
+
+    override fun onPaymentError(code: Int, response: String?) {
+        try {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous"
+            val database = FirebaseDatabase.getInstance()
+            val txnRef = database.getReference("transactions").child(userId).push()
+            val payload = mapOf(
+                "status" to "FAILED",
+                "code" to code,
+                "response" to (response ?: ""),
+                "timestamp" to System.currentTimeMillis()
+            )
+            txnRef.setValue(payload)
+
+            val intent = Intent("com.example.designyourt_shirt.PAYMENT_FAILED")
+            intent.putExtra("code", code)
+            intent.putExtra("response", response)
+            sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.e("Payment", "onPaymentError error: ${e.message}")
+        }
+    }
 }
+
 

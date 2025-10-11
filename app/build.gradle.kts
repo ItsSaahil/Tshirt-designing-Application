@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.dagger.hilt.plugin)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.google.gms.google.services)
@@ -9,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.designyourt_shirt"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.designyourt_shirt"
@@ -74,4 +73,6 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     kapt(libs.dagger.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    // Razorpay Android SDK for payments
+    implementation("com.razorpay:checkout:1.6.23")
 }

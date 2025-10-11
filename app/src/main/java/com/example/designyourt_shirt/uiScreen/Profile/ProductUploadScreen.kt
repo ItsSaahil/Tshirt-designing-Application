@@ -132,7 +132,7 @@ fun ProductUploadScreen() {
 
             // Category Dropdown
             var expanded by remember { mutableStateOf(false) }
-            val categories = listOf("Casual", "Formal", "Graphic", "Sporty")
+            val categories = listOf("Casual", "Formal", "Graphic", "Sporty", "Festival Season")
 
             ExposedDropdownMenuBox(
                 expanded = expanded,

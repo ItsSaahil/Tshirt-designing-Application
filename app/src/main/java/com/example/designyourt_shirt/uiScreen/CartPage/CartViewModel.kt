@@ -177,4 +177,23 @@ class CartViewModel : ViewModel() {
     fun isInCart(productId: String): Boolean {
         return _cartItems.value.containsKey(productId)
     }
+
+    // Record a transaction to the Realtime Database
+    fun recordTransaction(transactionId: String, amount: Double, status: String, details: Map<String, Any> = emptyMap()) {
+        viewModelScope.launch {
+            try {
+                val txnRef = database.getReference("transactions").child(currentUserId).child(transactionId)
+                val payload = mutableMapOf<String, Any>(
+                    "transactionId" to transactionId,
+                    "amount" to amount,
+                    "status" to status,
+                    "timestamp" to System.currentTimeMillis()
+                )
+                payload.putAll(details)
+                txnRef.setValue(payload).await()
+            } catch (e: Exception) {
+                println("Error recording transaction: ${e.message}")
+            }
+        }
+    }
 }
