@@ -12,6 +12,9 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -61,6 +64,24 @@ fun ProductCard(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
+            }
+
+            // Festival Season badge / ribbon
+            if (product.category == "Festival Season") {
+                // small ribbon at top-left
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                        .rotate(-20f)
+                        .background(
+                            brush = Brush.horizontalGradient(listOf(Color(0xFFFFC107), Color(0xFFFF5722))),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(text = "Festival", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
 
             Row(
